@@ -9,33 +9,50 @@ def load_data(path):
     data = pd.read_csv(path,header=None)
     data = data.drop(data.columns[[0, 1]], axis=1)
     data = data.values
-    train_data = np.array(data)
-    row, col = train_data.shape
-    #print(train_data.shape)
-    size = int(row/18)
+    test_data = np.array(data)
+    row, col = test_data.shape
+    #print(test_data.shape)
+    size = int(row/18) # size = 240
 
-    X = []
-    for _ in range(size):
-        X.append([])
-    
+    X = np.ones(shape=(size,163))
+
     for s in range(size):
-        for f in range(18):
-            for h in range(col):
-                n = s * size + f
-                if n < row:
-                    if train_data[n][h] == 'NR':
-                        a = 0.0
-                    else:
-                        a = float(train_data[n][h])
-                X[s].append(a)
-        X[s].append(1.0)
-    X_np = np.array(X)
-    return X_np
+        for k in range(18):
+            for l in range(9):
+                n = s * 18 + k
+                f = k * 9 + l
+                if test_data[n][l] == 'NR':
+                    a = 0.0
+                else:
+                    a = float(test_data[n][l])
+                    X[s][f] = a
+    
+    # for s in range(size):
+    #     for f in range(18):
+    #         for h in range(col):
+    #             n = s * size + f
+    #             if n < row:
+    #                 if train_data[n][h] == 'NR':
+    #                     a = 0.0
+    #                 else:
+    #                     a = float(train_data[n][h])
+    #             X[s].append(a)
+    #     X[s].append(1.0)
+
+    X_test = np.array(X)
+    # # for debug: write train_data
+    # with open('X_test.csv', 'w', newline='') as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     writer.writerows(X_test)
+    
+    # print(X_test.shape)
+    return X_test
 
 def predict(model_path, X):
     model = np.load(model_path)
     # print(model)
-    Y = np.inner(X, model)
+    # print(X.shape)
+    Y = np.dot(X,model)
     return Y
 
 if __name__ == '__main__' :
@@ -52,4 +69,4 @@ if __name__ == '__main__' :
         for i in range(len(Y)):
             id_name = 'id_' + str(i)
             writer.writerow([id_name, Y[i]])
-    #print(Y)
+    # print(Y)
