@@ -9,14 +9,8 @@ def load_data(path):
     data = pd.read_csv(path, encoding='big5', header=None).values
     data = data[:, 2:]
     data = np.reshape(data, (-1,18,9)) # (240,18,9)
-    
-    # extract features
-    features = [2, 3, 5, 6, 7, 8, 9, 10, 14, 15, 12, 16, 17]
-    # features = [3, 5, 6, 7, 8, 9, 12, 16, 17]
-    data = data[:,features,:]
-    data[data == 'NR'] = '0.0'
+    data = np.delete(data, 10, 1) # (240,17,9)
     data = data.astype(float)
-    data[data < 0.0] = 0.0
 
     X = []
     for i in range(data.shape[0]):
@@ -29,8 +23,15 @@ def load_data(path):
     
     return X_test
 
-def predict(model_path, X):
-    w = np.load(model_path)
+def scaling(model_path, X):
+    model_all = np.load(model_path)
+    w = model_all[0]
+    Max = model_all[1]
+    Min = model_all[2]
+    X_data = (X - Min)/(Max - Min + 1e-20) + 1e-10
+    return X_data, w
+
+def predict(w, X):
     Y = np.dot(X,w)
     return Y
 
@@ -41,7 +42,8 @@ if __name__ == '__main__' :
     parser.add_argument('--output_path', type=str, default='output.csv', help='path to output')
     opts = parser.parse_args()
     X = load_data(opts.data_path)
-    Y = predict(opts.model_path, X)
+    X, w = scaling(opts.model_path, X)
+    Y = predict(w, X)
     with open(opts.output_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['id','value'])
