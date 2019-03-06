@@ -13,26 +13,12 @@ def load_data(path):
     data = np.reshape(data, (12,18,-1)) #(12,18,480)
     
     # extract features
-    # features = [2, 3, 5, 6, 7, 8, 9, 10, 14, 15, 12, 16, 17]
+    features = [2, 3, 5, 6, 7, 8, 9, 10, 14, 15, 12, 16, 17]
     # features = [3, 5, 6, 7, 8, 9, 12, 16, 17]
-    # data = data[:,features,:]
+    data = data[:,features,:]
     print(data.shape)
     data[data == 'NR'] = '0.0'
     data = data.astype(float)
-    for i in range(data.shape[0]):
-        for j in range(data.shape[1]):
-            for k in range(data.shape[2]):
-                if data[i][j][k] < 0 and k > 0 and k < data.shape[2]-1:
-                    prevone = k - 1
-                    nextone = k + 1
-                    days = 2
-                    while data[i][j][nextone] < 0:
-                        nextone = nextone + 1
-                        days = days + 1
-                    if nextone >= data.shape[2]:
-                        data[i][j][k] = 0.0
-                    else:
-                        data[i][j][k] = (data[i][j][prevone]*(days-1) + data[i][j][nextone])/days
     data[data < 0.0] = 0.0
 
     X = []
@@ -42,7 +28,7 @@ def load_data(path):
             one_data = data[m,:,h:h+9].flatten()
             one_data = np.append(one_data, 1.0)
             X.append(one_data)
-            Y.append(data[m,9,h+9]) # needs to change if extract features
+            Y.append(data[m,6,h+9]) # needs to change if extract features
     
     X_data = np.array(X)
     Y_data = np.array(Y)
@@ -77,5 +63,5 @@ if __name__ == '__main__' :
     X, Y = load_data(opts.data_path)
     w = train(X,Y)
     # print(w)
-    np.save("model_difference.npy",w)
+    np.save("model_zero_feat_long.npy",w)
     #print(w.shape)
