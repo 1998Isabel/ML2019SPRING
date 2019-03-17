@@ -18,6 +18,19 @@ def nation_map(path, X_nation):
     # print(X_nation)
     return X_nation, notused
 
+def age_class(data):
+    size = len(data)
+    ages = np.zeros((size, 9))
+    for i in range(size):
+        group = int(data[i]/10) -1
+        if group >= 9 :
+            group = 8
+        if group <= 0 :
+            group = 0
+        ages[i][group] = 1
+    # print(ages.shape)
+    return ages
+
 def load_rawdata(data_path, X_path, Y_path, nation_path):
     data = pd.read_csv(data_path).values
     X = pd.read_csv(X_path).values
@@ -50,15 +63,22 @@ def load_rawdata(data_path, X_path, Y_path, nation_path):
     X_data = np.concatenate((X_data, nations), 1)
     print(X_data.shape) # (32561, 65)
 
+    # add age class
+    ages = age_class(data[:,0])
+    X_data = np.concatenate((X_data, ages), 1)
+
     data = data[:,4] # education_num
     data = np.expand_dims(data, 1)
     X_data = np.concatenate((X_data, data), 1)
     size = X_data.shape[0]
+
+    # add bias
     Ones = np.ones((size,1))
     X_data = np.concatenate((X_data, Ones), 1)
     print(X_data.shape) # (32561, 67)
     X_data = X_data.astype(float)
     Y = Y.astype(float)
+    # delete not used
     X_data = np.delete(X_data, notused, axis=0)
     Y = np.delete(Y, notused, axis=0)
     print(X_data.shape)
@@ -95,7 +115,7 @@ def train(X,Y):
     size, p = X.shape
     epochs = 5000
     lr = 1
-    w = np.zeros((p,))
+    w = np.ones((p,))
     # b = np.zeros((1,))
     prev_w_grad = np.zeros((p,))
     # prev_b_grad = np.zeros((1,))
@@ -125,7 +145,7 @@ def scaling(X):
     Std = np.std(X, axis=0)
     # print(Mean.shape)
     # index = [0, 1, 3, 4, 5]
-    index = [0, 2, 3, 4, 64, 65]
+    index = [0, 2, 3, 4, 64, 74]
     Means = np.zeros(X.shape[1])
     Stds = np.ones(X.shape[1])
     Means[index] = Mean[index]
@@ -147,5 +167,5 @@ if __name__ == '__main__' :
     X, Mean, Std = scaling(X)
     w = train(X, Y)
     model = np.vstack((w, Mean, Std))
-    np.save("logistic_raw_10.npy",model)
+    np.save("logistic_raw_11.npy",model)
     print(model.shape)

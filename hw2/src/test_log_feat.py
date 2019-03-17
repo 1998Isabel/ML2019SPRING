@@ -14,6 +14,19 @@ def nation_map(path, X_nation):
     # print(X_nation)
     return X_nation
 
+def age_class(data):
+    size = len(data)
+    ages = np.zeros((size, 9))
+    for i in range(size):
+        group = int(data[i]/10) -1
+        if group >= 9 :
+            group = 8
+        if group <= 0 :
+            group = 0
+        ages[i][group] = 1
+    # print(ages.shape)
+    return ages
+
 def load_rawdata(data_path, X_path, nation_path):
     data = pd.read_csv(data_path).values
     X = pd.read_csv(X_path).values
@@ -42,6 +55,10 @@ def load_rawdata(data_path, X_path, nation_path):
     nations = np.expand_dims(nations, 1)
     X_data = np.concatenate((X_data, nations), 1)
     print(X_data.shape) # (32561, 65)
+
+    # add age class
+    ages = age_class(data[:,0])
+    X_data = np.concatenate((X_data, ages), 1)
 
     data = data[:,4] # education_num
     data = np.expand_dims(data, 1)
