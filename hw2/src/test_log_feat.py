@@ -32,7 +32,7 @@ def load_rawdata(data_path, X_path, nation_path):
     X = pd.read_csv(X_path).values
     size = X.shape[0]
     X_data = np.copy(X)
-    for i in range(41):
+    for i in range(42):
         X_data = np.delete(X_data, 105-i, 1) # delete nation
     # for i in range(16):
     #     X = np.delete(X, 64-i, 1) # delete educaton
@@ -66,8 +66,8 @@ def load_rawdata(data_path, X_path, nation_path):
     X_data = np.concatenate((X_data, data), 1)
     
     # add square, cubic
-    square_sieve = [0, 2, 3, 4, 64, 74]
-    cubic_sieve = [0, 2, 3, 4, 64, 74]
+    square_sieve = [0, 2, 3, 4, 63, 73]
+    cubic_sieve = [0, 2, 3, 4, 63, 73]
     Squ = X_data[:,square_sieve]
     Cu = X_data[:,cubic_sieve]
     X_data = np.concatenate((X_data, Squ**2), 1)
