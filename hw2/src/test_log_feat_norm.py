@@ -103,10 +103,10 @@ def scaling(model_path, X):
         writer = csv.writer(csvfile)
         writer.writerows(model_all)
     w = model_all[0]
-    Mean = model_all[1]
-    Std = model_all[2]
+    Max = model_all[1]
+    Min = model_all[2]
     
-    X = (X - Mean)/Std
+    X = (X - Min)/(Max - Min)
     return X, w
 
 def predict(w, X):

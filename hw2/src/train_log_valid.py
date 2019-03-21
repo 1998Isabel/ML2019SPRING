@@ -100,44 +100,26 @@ def load_rawdata(data_path, X_path, Y_path, nation_path):
         writer.writerows(X_data)
     return X_data, Y
 
-def load_data(X_path, Y_path):
-    # data = pd.read_csv(path).values # (4320,27)
-    # data = data[:, 3:] # (4320,24)
-    # data = np.reshape(data, (12,-1,18,24)) #(12_months,20_days,18_features,24_hours)
-    # data = data.swapaxes(1,2) #(12,18,20,24)
-    # data = np.reshape(data, (12,18,-1)) #(12,18,480)
-    # data = np.delete(data, 10, 1) # delete RAIN_FALL (12,17,480)
-    # data = data.astype(float)
-
-    X = pd.read_csv(X_path).values  #(32561, 106)
-    Y = pd.read_csv(Y_path).values  #(32561, 1)
-    Y = Y.reshape((Y.shape[0],))
-    size = X.shape[0]
-    Ones = np.ones((size,1))
-    X = np.concatenate((X, Ones), 1)
-    X = X.astype(float)
-    # print(X.shape)
-    return X, Y
-
 def sigmoid(Z):
     return np.clip(1 / (1.0 + np.exp(-Z)), 1e-6, 1-1e-6)
 
-def train(X,Y):
-    # print(X.shape)
+def train(X_train,Y_train):
     dev_size = 0.1155
-    X, Y, X_dev, Y_dev = train_dev_split(X, Y, dev_size = dev_size)
-    num_train = len(Y)
+    X_train, Y_train, X_dev, Y_dev = train_dev_split(X_train, Y_train, dev_size = dev_size)
+    num_train = len(Y_train)
     num_dev = len(Y_dev)
 
-    size, p = X.shape
-    epochs = 2851
-    lr = 1
+    # print(X.shape)
+    size, p = X_train.shape
+    epochs = 5100
+    batch_size = 28283
+    lr = 0.2
     w = np.ones((p,))
     prev_w_grad = np.zeros((p,))
     # prev_b_grad = np.zeros((1,))
-    x_t = np.transpose(X)
+    # x_t = np.transpose(X_train)
     lamdas = [0, 0.1, 0.01, 0.001, 0.0001]
-    lamda = np.ones(p) * lamdas[2]
+    lamda = np.ones(p) * lamdas[3]
     lamda[-1] = 0.0
     loss_all = []
 
@@ -151,34 +133,37 @@ def train(X,Y):
     best_v_T = 0
     
     for T in range(epochs):
-        X, Y = _shuffle(X, Y)
-        Z = np.dot(X, w)
-        # print(Z)
-        f_x = sigmoid(Z)
-        Cross = -(np.dot(Y, np.log(f_x)) + np.dot((1 - Y), np.log(1 - f_x)))
-        
-        Loss = f_x - Y
-        w_grad = np.sum(X * Loss.reshape((size,1)), axis=0) + np.multiply(lamda, w)
-        # b_grad = np.sum(Loss)
-        prev_w_grad += w_grad**2
-        # prev_b_grad += b_grad**2
-        w_adagrad = np.sqrt(prev_w_grad)
-        # b_adagrad = np.sqrt(prev_b_grad)
-        w -= lr * w_grad / w_adagrad
-        # b -= lr * b_grad / b_adagrad
+        X_train, Y_train = _shuffle(X_train, Y_train)
+        # print(len(Y_train))
+        for idx in range(int(np.floor(len(Y_train)/batch_size))):
+            X = X_train[idx*batch_size:(idx+1)*batch_size]
+            Y = Y_train[idx*batch_size:(idx+1)*batch_size]
 
-        # if T%100 == 0:
-        #     print("Iteration ", T, ": ", Cross)
-        y_train_pred = get_prob(X, w)
+            size = X.shape[0]
+            Z = np.dot(X, w)
+            f_x = sigmoid(Z)
+            # Cross = -(np.dot(Y, np.log(f_x)) + np.dot((1 - Y), np.log(1 - f_x)))
+
+            Loss = f_x - Y
+            w_grad = np.sum(X * Loss.reshape((size,1)), axis=0) + np.multiply(lamda, w)
+            # b_grad = np.sum(Loss)
+            prev_w_grad += w_grad**2
+            # prev_b_grad += b_grad**2
+            w_adagrad = np.sqrt(prev_w_grad)
+            # b_adagrad = np.sqrt(prev_b_grad)
+            w -= lr * w_grad / w_adagrad
+            # b -= lr * b_grad / b_adagrad
+
+        y_train_pred = get_prob(X_train, w)
         Y_train_pred = np.round(y_train_pred)
-        train_acc.append(accuracy(Y_train_pred, Y))
-        loss_train.append(loss(y_train_pred, Y, lamdas[2], w)/num_train)
+        train_acc.append(accuracy(Y_train_pred, Y_train))
+        loss_train.append(loss(y_train_pred, Y_train, lamdas[2], w)/num_train)
         
         y_dev_pred = get_prob(X_dev, w)
         Y_dev_pred = np.round(y_dev_pred)
         dev_acc.append(accuracy(Y_dev_pred, Y_dev))
         loss_validation.append(loss(y_dev_pred, Y_dev, lamdas[2], w)/num_dev)
-        
+
         if train_acc[T] > best_train_acc:
             best_train_acc = train_acc[T]
             best_t_T = T
@@ -193,7 +178,10 @@ def train(X,Y):
     print(best_t_T, best_train_acc, best_v_T, best_valid_acc)
     dev_acc_n = np.array(dev_acc)
     print(np.mean(dev_acc_n))
-    # w = np.concatenate(w, b[0])
+    # Iteration  2900 :
+    # Train:  0.8585115785752165 0.30548785570509474
+    # Valid:  0.851340373679935 0.319004675254328
+    # 2850 0.8585469330033587 49 0.8554021121039805
     return w
 
 def scaling(X):
@@ -248,5 +236,5 @@ if __name__ == '__main__' :
     X, Mean, Std = scaling(X)
     w = train(X, Y)
     model = np.vstack((w, Mean, Std))
-    np.save("logistic_raw_15.npy",model)
+    np.save("logistic_valid_6.npy",model)
     # print(model.shape)
